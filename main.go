@@ -1,13 +1,14 @@
 package main
 
 import (
+	"cli-plugin-csharp-gen/generate"
+	"context"
+	_ "embed"
 	"encoding/gob"
 	"fmt"
-	"path/filepath"
 
 	hplugin "github.com/hashicorp/go-plugin"
 
-	"github.com/ignite/cli/ignite/services/chain"
 	"github.com/ignite/cli/ignite/services/plugin"
 )
 
@@ -21,26 +22,18 @@ type p struct{}
 
 func (p) Manifest() (plugin.Manifest, error) {
 	return plugin.Manifest{
-		Name: "example-plugin",
+		Name: "csharp",
 		// Add commands here
 		Commands: []plugin.Command{
 			// Example of a command
 			{
-				Use:   "example-plugin",
-				Short: "Explain what the command is doing...",
-				Long:  "Long description goes here...",
+				Use:   "csharp-client",
+				Short: "Generates csharp client",
+				Long:  "Generates csharp client",
 				Flags: []plugin.Flag{
-					{Name: "my-flag", Type: plugin.FlagTypeString, Usage: "my flag description"},
+					{Name: "out", Type: plugin.FlagTypeString, Usage: "csharp output directory"},
 				},
-				PlaceCommandUnder: "ignite",
-				// Examples of adding subcommands:
-				/*
-					Commands: []plugin.Command{
-						{Use: "add"},
-						{Use: "list"},
-						{Use: "delete"},
-					},
-				*/
+				PlaceCommandUnder: "generate",
 			},
 		},
 		// Add hooks here
@@ -53,24 +46,20 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 	fmt.Printf("Hello I'm the example-plugin plugin\n")
 	fmt.Printf("My executed command: %q\n", cmd.Path)
 	fmt.Printf("My args: %v\n", cmd.Args)
-	myFlag, _ := cmd.Flags().GetString("my-flag")
-	fmt.Printf("My flags: my-flag=%q\n", myFlag)
 	fmt.Printf("My config parameters: %v\n", cmd.With)
 
-	// This is how the plugin can access the chain:
-	// c, err := getChain(cmd)
+	ctx := context.Background()
 
-	// According to the number of declared commands, you may need a switch:
-	/*
-		switch cmd.Use {
-		case "add":
-			fmt.Println("Adding stuff...")
-		case "list":
-			fmt.Println("Listing stuff...")
-		case "delete":
-			fmt.Println("Deleting stuff...")
-		}
-	*/
+	gen, err := generate.New(cmd)
+	if err != nil {
+		return err
+	}
+
+	err = gen.GenerateClients(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -89,24 +78,9 @@ func (p) ExecuteHookCleanUp(hook plugin.ExecutedHook) error {
 	return nil
 }
 
-func getChain(cmd plugin.ExecutedCommand, chainOption ...chain.Option) (*chain.Chain, error) {
-	var (
-		home, _ = cmd.Flags().GetString("home")
-		path, _ = cmd.Flags().GetString("path")
-	)
-	if home != "" {
-		chainOption = append(chainOption, chain.HomePath(home))
-	}
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
-	}
-	return chain.New(absPath, chainOption...)
-}
-
 func main() {
 	pluginMap := map[string]hplugin.Plugin{
-		"example-plugin": &plugin.InterfacePlugin{Impl: &p{}},
+		"cli-plugin-csharp-gen": &plugin.InterfacePlugin{Impl: &p{}},
 	}
 
 	hplugin.Serve(&hplugin.ServeConfig{

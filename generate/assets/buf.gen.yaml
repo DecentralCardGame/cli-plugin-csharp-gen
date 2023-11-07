@@ -1,0 +1,9 @@
+version: v1
+managed:
+    enabled: true
+plugins:
+    - plugin: cosmosCsharp
+      out: .
+    - plugin: buf.build/protocolbuffers/csharp
+      out: .
+      opt: base_namespace=
