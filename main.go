@@ -60,6 +60,11 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 		return err
 	}
 
+	err = gen.GenerateCsproj()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
