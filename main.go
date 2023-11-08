@@ -1,14 +1,13 @@
 package main
 
 import (
-	"cli-plugin-csharp-gen/generate"
 	"context"
 	_ "embed"
 	"encoding/gob"
 	"fmt"
 
+	"cli-plugin-csharp-gen/generate"
 	hplugin "github.com/hashicorp/go-plugin"
-
 	"github.com/ignite/cli/ignite/services/plugin"
 )
 
@@ -42,12 +41,6 @@ func (p) Manifest() (plugin.Manifest, error) {
 }
 
 func (p) Execute(cmd plugin.ExecutedCommand) error {
-	// TODO: write command execution here
-	fmt.Printf("Hello I'm the example-plugin plugin\n")
-	fmt.Printf("My executed command: %q\n", cmd.Path)
-	fmt.Printf("My args: %v\n", cmd.Args)
-	fmt.Printf("My config parameters: %v\n", cmd.With)
-
 	ctx := context.Background()
 
 	gen, err := generate.New(cmd)

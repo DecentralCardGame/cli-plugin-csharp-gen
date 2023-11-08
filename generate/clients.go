@@ -3,6 +3,7 @@ package generate
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"github.com/ignite/cli/ignite/pkg/cosmosbuf"
 )
 
@@ -10,6 +11,7 @@ import (
 var bufGenYaml string
 
 func (g generator) GenerateClients(ctx context.Context) error {
+	fmt.Println("Generating clients...")
 	buf, err := cosmosbuf.New()
 	if err != nil {
 		return err
