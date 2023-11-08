@@ -5,11 +5,14 @@ import (
 	_ "embed"
 	"encoding/gob"
 	"fmt"
+	"os/exec"
 
 	"cli-plugin-csharp-gen/generate"
 	hplugin "github.com/hashicorp/go-plugin"
 	"github.com/ignite/cli/ignite/services/plugin"
 )
+
+const cosmosCsharpPluginVersion = "0.1.0"
 
 func init() {
 	gob.Register(plugin.Manifest{})
@@ -43,6 +46,11 @@ func (p) Manifest() (plugin.Manifest, error) {
 func (p) Execute(cmd plugin.ExecutedCommand) error {
 	ctx := context.Background()
 
+	err := installPlugin()
+	if err != nil {
+		return err
+	}
+
 	gen, err := generate.New(cmd)
 	if err != nil {
 		return err
@@ -59,6 +67,16 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 	}
 
 	return nil
+}
+
+func installPlugin() error {
+	fmt.Println("Installing protoc plugin...")
+	cmd := exec.Command(
+		"sh",
+		"-c",
+		fmt.Sprintf("go install \"github.com/DecentralCardgame/protoc-gen-cosmosCsharp@v%s\"", cosmosCsharpPluginVersion),
+	)
+	return cmd.Run()
 }
 
 func (p) ExecuteHookPre(hook plugin.ExecutedHook) error {
