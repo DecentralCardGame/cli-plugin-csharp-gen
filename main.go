@@ -20,10 +20,11 @@ const (
 	Component_Clients Component = "clients"
 	Component_Csproj  Component = "csproj"
 	Component_Readme  Component = "readme"
+	Component_Queries Component = "queries"
 )
 
 func Component_values() []Component {
-	return []Component{Component_Clients, Component_Csproj, Component_Readme}
+	return []Component{Component_Clients, Component_Csproj, Component_Readme, Component_Queries}
 }
 
 func Component_stringValues() (stringValues []string) {
@@ -76,7 +77,7 @@ func (p) Manifest() (plugin.Manifest, error) {
 						Usage: fmt.Sprintf(
 							"components to be generated; options: [%s]",
 							strings.Join(Component_stringValues(), ", "),
-							),
+						),
 					},
 				},
 				PlaceCommandUnder: "generate",
@@ -89,7 +90,7 @@ func (p) Manifest() (plugin.Manifest, error) {
 
 func (p) Execute(cmd plugin.ExecutedCommand) error {
 	ctx := context.Background()
-	buildComponents, err :=  getBuildComponents(cmd)
+	buildComponents, err := getBuildComponents(cmd)
 	if err != nil {
 		return fmt.Errorf("error while getting build components: %s", err.Error())
 	}
@@ -107,13 +108,20 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 	var componentRegister = map[Component]func() error{
 		Component_Csproj: gen.GenerateCsproj,
 		Component_Readme: gen.GenerateReadme,
-		Component_Clients: func () error {
+		Component_Clients: func() error {
 			return gen.GenerateClients(ctx)
 		},
+		Component_Queries: func() error {
+			return gen.GenerateQueries(ctx)
+		},
+
 	}
 
 	for _, comp := range buildComponents {
 		err = componentRegister[comp]()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -130,17 +138,14 @@ func installPlugin() error {
 }
 
 func (p) ExecuteHookPre(hook plugin.ExecutedHook) error {
-	fmt.Printf("Executing hook pre %q\n", hook.Name)
 	return nil
 }
 
 func (p) ExecuteHookPost(hook plugin.ExecutedHook) error {
-	fmt.Printf("Executing hook post %q\n", hook.Name)
 	return nil
 }
 
 func (p) ExecuteHookCleanUp(hook plugin.ExecutedHook) error {
-	fmt.Printf("Executing hook cleanup %q\n", hook.Name)
 	return nil
 }
 
