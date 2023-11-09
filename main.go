@@ -6,11 +6,47 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os/exec"
+	"slices"
+	"strings"
 
 	"cli-plugin-csharp-gen/generate"
 	hplugin "github.com/hashicorp/go-plugin"
 	"github.com/ignite/cli/ignite/services/plugin"
 )
+
+type Component string
+
+const (
+	Component_Clients Component = "clients"
+	Component_Csproj  Component = "csproj"
+	Component_Readme  Component = "readme"
+)
+
+func Component_values() []Component {
+	return []Component{Component_Clients, Component_Csproj, Component_Readme}
+}
+
+func Component_stringValues() (stringValues []string) {
+	for _, val := range Component_values() {
+		stringValues = append(stringValues, string(val))
+	}
+	return
+}
+
+func getBuildComponents(cmd plugin.ExecutedCommand) (components []Component, err error) {
+	rawComponents, _ := cmd.Flags().GetStringSlice("components")
+	if len(rawComponents) == 0 {
+		return Component_values(), nil
+	}
+	for _, comp := range rawComponents {
+		if !slices.Contains(Component_stringValues(), comp) {
+			err = fmt.Errorf("buildcomponent '%s' does not exist; options are: [%s]", comp, strings.Join(Component_stringValues(), ", "))
+			return
+		}
+		components = append(components, Component(comp))
+	}
+	return
+}
 
 const cosmosCsharpPluginVersion = "0.1.0"
 
@@ -34,6 +70,14 @@ func (p) Manifest() (plugin.Manifest, error) {
 				Long:  "Generates csharp client",
 				Flags: []plugin.Flag{
 					{Name: "out", Type: plugin.FlagTypeString, Usage: "csharp output directory"},
+					{
+						Name: "components",
+						Type: plugin.FlagTypeStringSlice,
+						Usage: fmt.Sprintf(
+							"components to be generated; options: [%s]",
+							strings.Join(Component_stringValues(), ", "),
+							),
+					},
 				},
 				PlaceCommandUnder: "generate",
 			},
@@ -45,8 +89,12 @@ func (p) Manifest() (plugin.Manifest, error) {
 
 func (p) Execute(cmd plugin.ExecutedCommand) error {
 	ctx := context.Background()
+	buildComponents, err :=  getBuildComponents(cmd)
+	if err != nil {
+		return fmt.Errorf("error while getting build components: %s", err.Error())
+	}
 
-	err := installPlugin()
+	err = installPlugin()
 	if err != nil {
 		return err
 	}
@@ -56,19 +104,16 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 		return err
 	}
 
-	err = gen.GenerateClients(ctx)
-	if err != nil {
-		return err
+	var componentRegister = map[Component]func() error{
+		Component_Csproj: gen.GenerateCsproj,
+		Component_Readme: gen.GenerateReadme,
+		Component_Clients: func () error {
+			return gen.GenerateClients(ctx)
+		},
 	}
 
-	err = gen.GenerateCsproj()
-	if err != nil {
-		return err
-	}
-
-	err = gen.GenerateReadme()
-	if err != nil {
-		return err
+	for _, comp := range buildComponents {
+		err = componentRegister[comp]()
 	}
 
 	return nil
