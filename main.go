@@ -66,6 +66,11 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 		return err
 	}
 
+	err = gen.GenerateReadme()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

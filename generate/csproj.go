@@ -12,7 +12,7 @@ import (
 //go:embed assets/csproj.tmpl
 var csprojTmpl string
 
-type model struct {
+type csprojModel struct {
 	Name      string
 	ShortName string
 	URL       string
@@ -20,7 +20,7 @@ type model struct {
 
 func (g generator) GenerateCsproj() error {
 	fmt.Println("Generating csproj...")
-	m := model{
+	m := csprojModel{
 		URL:       "https://" + g.modulePath.RawPath,
 		Name:      strings.Join(strings.Split(g.modulePath.RawPath, "/")[1:], "."),
 		ShortName: g.modulePath.Package,
