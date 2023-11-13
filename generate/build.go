@@ -12,5 +12,12 @@ func (g generator) Build() error {
 		"build",
 		g.outPath,
 	)
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\nGenerated client '%s' to '%s'!\n", g.csModulePath, g.outPath)
+
+	return nil
 }
