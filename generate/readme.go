@@ -10,6 +10,8 @@ import (
 
 //go:embed assets/README.md.tmpl
 var readmeTmpl string
+//go:embed assets/gitignore
+var gitIgnore []byte
 
 type readmeModel struct {
 	Name      string
@@ -26,12 +28,17 @@ func (g generator) GenerateReadme() error {
 		return err
 	}
 
-	path := filepath.Join(g.outPath, "/README.md")
-	f, err := os.Create(path)
+	path := filepath.Join(g.outPath, "README.md")
+	readme, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer readme.Close()
 
-	return tmpl.Execute(f, m)
+	err = os.WriteFile(filepath.Join(g.outPath, ".gitignore"), gitIgnore, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	return tmpl.Execute(readme, m)
 }
