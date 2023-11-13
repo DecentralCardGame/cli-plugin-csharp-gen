@@ -1,0 +1,23 @@
+using Cosmcs.Client;
+
+namespace {{ .Path }}
+{
+    public class Client
+    {
+        public EasyClient Ec { get; }
+        
+        {{ range .Txs }}public {{ .Path }}.{{ .Type }}Client {{ .Name }}TxClient { get; }
+        {{ end }}
+        {{ range .Queries }}public {{ .Path }}.{{ .Type }}.{{ .Type }}Client {{ .Name }}QueryClient { get; }
+        {{ end }}
+
+        public Client(string rpcUrl, string chainId, byte[] bytes, EasyClientOptions? options = null)
+        {
+            Ec = new EasyClient(rpcUrl, chainId, bytes, "cosmos", options);
+            {{ range .Txs }}{{ .Name }}TxClient = new {{ .Path }}.{{ .Type }}Client(Ec);
+            {{ end }}
+            {{ range .Queries }}{{ .Name }}{{ .Type }}Client = new {{ .Path }}.{{ .Type }}.{{ .Type }}Client(Ec.Channel);
+            {{ end }}
+        }
+    }
+}

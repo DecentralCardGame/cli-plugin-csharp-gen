@@ -6,14 +6,16 @@ import (
 	"github.com/ignite/cli/ignite/services/chain"
 	"github.com/ignite/cli/ignite/services/plugin"
 	"path/filepath"
+	"strings"
 )
 
 type generator struct {
-	modulePath gomodulepath.Path
-	config     *chainConfig.Config
-	appPath    string
-	protoPath  string
-	outPath    string
+	modulePath   gomodulepath.Path
+	config       *chainConfig.Config
+	appPath      string
+	protoPath    string
+	outPath      string
+	csModulePath string
 }
 
 func New(cmd plugin.ExecutedCommand) (*generator, error) {
@@ -30,18 +32,21 @@ func New(cmd plugin.ExecutedCommand) (*generator, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	outFlag, _ := cmd.Flags().GetString("out")
 	if outFlag == "" {
 		outFlag = "./cs"
 	}
 
+	csModulePath := getModulePath(p.RawPath)
+
 	gen := generator{
-		config:     config,
-		modulePath: p,
-		appPath:    appPath,
-		protoPath:  filepath.Join(appPath, config.Config.Build.Proto.Path),
-		outPath:    filepath.Join(appPath, outFlag),
+		config:       config,
+		modulePath:   p,
+		appPath:      appPath,
+		protoPath:    filepath.Join(appPath, config.Config.Build.Proto.Path),
+		outPath:      filepath.Join(appPath, outFlag),
+		csModulePath: csModulePath,
 	}
 
 	return &gen, nil
@@ -70,4 +75,8 @@ func getPath(cmd plugin.ExecutedCommand) (gomodulepath.Path, string, error) {
 	}
 
 	return gomodulepath.Find(absPath)
+}
+
+func getModulePath(rawPath string) string {
+	return strings.Join(strings.Split(rawPath, "/")[1:], ".")
 }

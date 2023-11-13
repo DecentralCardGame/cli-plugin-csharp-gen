@@ -21,10 +21,11 @@ const (
 	Component_Csproj  Component = "csproj"
 	Component_Readme  Component = "readme"
 	Component_Queries Component = "queries"
+	Component_Client  Component = "client"
 )
 
 func Component_values() []Component {
-	return []Component{Component_Clients, Component_Csproj, Component_Readme, Component_Queries}
+	return []Component{Component_Clients, Component_Csproj, Component_Readme, Component_Queries, Component_Client}
 }
 
 func Component_stringValues() (stringValues []string) {
@@ -114,7 +115,9 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 		Component_Queries: func() error {
 			return gen.GenerateQueries(ctx)
 		},
-
+		Component_Client: func() error {
+			return gen.GenerateClient(ctx)
+		},
 	}
 
 	for _, comp := range buildComponents {
@@ -124,7 +127,7 @@ func (p) Execute(cmd plugin.ExecutedCommand) error {
 		}
 	}
 
-	return nil
+	return gen.Build()
 }
 
 func installPlugin() error {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 )
 
@@ -22,7 +21,7 @@ func (g generator) GenerateCsproj() error {
 	fmt.Println("Generating csproj...")
 	m := csprojModel{
 		URL:       "https://" + g.modulePath.RawPath,
-		Name:      strings.Join(strings.Split(g.modulePath.RawPath, "/")[1:], "."),
+		Name:      g.csModulePath,
 		ShortName: g.modulePath.Package,
 	}
 
@@ -31,7 +30,7 @@ func (g generator) GenerateCsproj() error {
 		return err
 	}
 
-	path := filepath.Join(g.outPath, "/"+g.modulePath.Package+".csproj")
+	path := filepath.Join(g.outPath, g.csModulePath+".csproj")
 	f, err := os.Create(path)
 	if err != nil {
 		return err
