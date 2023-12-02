@@ -35,8 +35,13 @@ func Component_stringValues() (stringValues []string) {
 	return
 }
 
-func getBuildComponents(cmd plugin.ExecutedCommand) (components []Component, err error) {
-	rawComponents, _ := cmd.Flags().GetStringSlice("components")
+func getBuildComponents(cmd *plugin.ExecutedCommand) (components []Component, err error) {
+	flags, err := cmd.NewFlags()
+	if err != nil {
+		return nil, err
+	}
+
+	rawComponents, _ := flags.GetStringSlice("components")
 	if len(rawComponents) == 0 {
 		return Component_values(), nil
 	}
@@ -60,17 +65,17 @@ func init() {
 
 type p struct{}
 
-func (p) Manifest() (plugin.Manifest, error) {
-	return plugin.Manifest{
+func (p) Manifest(context.Context) (*plugin.Manifest, error) {
+	return &plugin.Manifest{
 		Name: "csharp",
 		// Add commands here
-		Commands: []plugin.Command{
+		Commands: []*plugin.Command{
 			// Example of a command
 			{
 				Use:   "csharp-client",
 				Short: "Generates csharp client",
 				Long:  "Generates csharp client",
-				Flags: []plugin.Flag{
+				Flags: []*plugin.Flag{
 					{Name: "out", Type: plugin.FlagTypeString, Usage: "csharp output directory"},
 					{
 						Name: "components",
@@ -85,12 +90,11 @@ func (p) Manifest() (plugin.Manifest, error) {
 			},
 		},
 		// Add hooks here
-		Hooks: []plugin.Hook{},
+		Hooks: []*plugin.Hook{},
 	}, nil
 }
 
-func (p) Execute(cmd plugin.ExecutedCommand) error {
-	ctx := context.Background()
+func (p) Execute(ctx context.Context, cmd *plugin.ExecutedCommand, api plugin.ClientAPI) error {
 	buildComponents, err := getBuildComponents(cmd)
 	if err != nil {
 		return fmt.Errorf("error while getting build components: %s", err.Error())
@@ -140,25 +144,24 @@ func installPlugin() error {
 	return cmd.Run()
 }
 
-func (p) ExecuteHookPre(hook plugin.ExecutedHook) error {
+func (p) ExecuteHookPre(_ context.Context, hook *plugin.ExecutedHook, api plugin.ClientAPI) error {
 	return nil
 }
 
-func (p) ExecuteHookPost(hook plugin.ExecutedHook) error {
+func (p) ExecuteHookPost(_ context.Context, hook *plugin.ExecutedHook, api plugin.ClientAPI) error {
 	return nil
 }
 
-func (p) ExecuteHookCleanUp(hook plugin.ExecutedHook) error {
+func (p) ExecuteHookCleanUp(_ context.Context, hook *plugin.ExecutedHook, api plugin.ClientAPI) error {
 	return nil
 }
 
 func main() {
-	pluginMap := map[string]hplugin.Plugin{
-		"cli-plugin-csharp-gen": &plugin.InterfacePlugin{Impl: &p{}},
-	}
-
 	hplugin.Serve(&hplugin.ServeConfig{
 		HandshakeConfig: plugin.HandshakeConfig(),
-		Plugins:         pluginMap,
+		Plugins: map[string]hplugin.Plugin{
+			"cli-plugin-csharp-gen": plugin.NewGRPC(&p{}),
+		},
+		GRPCServer: hplugin.DefaultGRPCServer,
 	})
 }

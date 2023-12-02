@@ -18,7 +18,12 @@ type generator struct {
 	csModulePath string
 }
 
-func New(cmd plugin.ExecutedCommand) (*generator, error) {
+func New(cmd *plugin.ExecutedCommand) (*generator, error) {
+	flags, err := cmd.NewFlags()
+	if err != nil {
+		return nil, err
+	}
+
 	c, err := getChain(cmd)
 	if err != nil {
 		return nil, err
@@ -33,7 +38,7 @@ func New(cmd plugin.ExecutedCommand) (*generator, error) {
 		return nil, err
 	}
 
-	outFlag, _ := cmd.Flags().GetString("out")
+	outFlag, _ := flags.GetString("out")
 	if outFlag == "" {
 		outFlag = "./cs"
 	}
@@ -52,10 +57,15 @@ func New(cmd plugin.ExecutedCommand) (*generator, error) {
 	return &gen, nil
 }
 
-func getChain(cmd plugin.ExecutedCommand, chainOption ...chain.Option) (*chain.Chain, error) {
+func getChain(cmd *plugin.ExecutedCommand, chainOption ...chain.Option) (*chain.Chain, error) {
+	flags, err := cmd.NewFlags()
+	if err != nil {
+		return nil, err
+	}
+
 	var (
-		home, _ = cmd.Flags().GetString("home")
-		path, _ = cmd.Flags().GetString("path")
+		home, _ = flags.GetString("home")
+		path, _ = flags.GetString("path")
 	)
 	if home != "" {
 		chainOption = append(chainOption, chain.HomePath(home))
@@ -67,8 +77,12 @@ func getChain(cmd plugin.ExecutedCommand, chainOption ...chain.Option) (*chain.C
 	return chain.New(absPath, chainOption...)
 }
 
-func getPath(cmd plugin.ExecutedCommand) (gomodulepath.Path, string, error) {
-	path, _ := cmd.Flags().GetString("path")
+func getPath(cmd *plugin.ExecutedCommand) (gomodulepath.Path, string, error) {
+	flags, err := cmd.NewFlags()
+	if err != nil {
+		return gomodulepath.Path{}, "", err
+	}
+	path, _ := flags.GetString("path")
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return gomodulepath.Path{}, "", err
